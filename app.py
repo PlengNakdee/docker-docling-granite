@@ -10,19 +10,14 @@ app = FastAPI()
 
 env_os.environ['DOCLING_MODEL'] = 'ibm-granite/granite-docling-258M'
 
-last_result = None
-
 converter = DocumentConverter()
 
-@app.post('/process')
+@app.post('/docling')
 async def process_document(request: Request):
-    global last_result
-    
     try:
         contents = await request.body()
         header = request.headers
         doc_type = header.get("type")
-        print(f"Document type from header: {doc_type}")
         file_extension = '.pdf'
         
         with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
@@ -33,16 +28,12 @@ async def process_document(request: Request):
         os.unlink(temp_path)
         
         response_data = {
-            # "filename": file_name,
             "timestamp": datetime.now().isoformat(),
             "result": result
         }
         
-        last_result = response_data
-        
         os.makedirs("/app/output", exist_ok=True)
         
-        # output_name = os.path.splitext(file_name)[0] if file_name else 'document'
         with open(f"/app/output/docling_{doc_type}.json", 'w', encoding='utf-8') as f:
             json.dump(response_data, f, indent=2, ensure_ascii=False)
         
@@ -50,14 +41,6 @@ async def process_document(request: Request):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
-
-
-@app.get('/result')
-async def view_result():
-    if last_result is None:
-        raise HTTPException(status_code=404, detail="No result available. Process a document first.")
-    
-    return JSONResponse(content=last_result)
 
 
 def process_with_docling(file_path):
@@ -75,7 +58,3 @@ def process_with_docling(file_path):
         
     except Exception as e:
         return {"error": f"Docling processing failed: {str(e)}"}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
