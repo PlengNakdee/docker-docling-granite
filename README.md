@@ -12,7 +12,7 @@ docker run -p 8000:8000 -v $(pwd)/output:/app/output granite
 ## In Terminal Run Local Tunnel
 
 ```bash
-cloudflared tunnel --url http://localhost:8001
+cloudflared tunnel --url http://localhost:8000
 ```
 
 ## Use URL Inside HTTP Request Node in n8n
